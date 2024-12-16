@@ -9,7 +9,13 @@
           Login with Microsoft
         </button>
       </div>
+      <!--  Calendar Library -->
+      <client-only>
+        <VCalendar v-model="date" />
+        <VDatePicker v-model="date" :attributes="attrs" />
+      </client-only>
 
+      <!-- List of Events -->
       <div v-if="events.length">
         <h2>Your Events:</h2>
         <ul>
@@ -33,6 +39,15 @@ export default {
   name: "DisplayEvents",
   data() {
     return {
+      date: new Date(),
+      attrs: {
+        key: "today",
+        highlight: {
+          color: "green",
+          fillMode: "solid",
+        },
+        dates: new Date(),
+      },
       isLoggedIn: false,
       accessToken: null,
       events: [],

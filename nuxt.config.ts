@@ -1,23 +1,26 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2024-11-01',
+  compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
+
   vite: {
     vue: {
-      customElement: true
+      customElement: true,
     },
     vueJsx: {
-      mergeProps: true
-    }
+      mergeProps: true,
+    },
   },
+
   webpack: {
     loaders: {
       vue: {
         hotReload: true,
-      }
-    }
-  },  
+      },
+    },
+  },
+  plugins: [{ src: "~/plugins/vcalendar.js", mode: "client" }],
   vue: {
-    propsDestructure: true
-  }
-})
+    propsDestructure: true,
+  },
+});
