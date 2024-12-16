@@ -1,6 +1,14 @@
 <template>
   <div>
-    <h1>Welcome to the homepage</h1>
+    <h1>Welcome to the Events Page</h1>
     <DisplayEvents />
   </div>
 </template>
+
+<script>
+import DisplayEvents from "~/components/DisplayEvents.vue";
+export default {
+  name: "EventsPage",
+  components: { DisplayEvents },
+};
+</script>
