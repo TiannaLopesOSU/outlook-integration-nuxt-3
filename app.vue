@@ -1,13 +1,20 @@
 <template>
-  <div>
+  <div class="container">
     <header>
-      <h1>My App Header</h1>
+      <nav class="navbar navbar-light bg-light">
+        <span class="navbar-brand mb-0 h1">Outlook Integration POC</span>
+      </nav>
     </header>
     <main>
       <NuxtPage />
     </main>
     <footer>
-      <p>My App Footer</p>
+      <div class="footer bg-secondary border border-top">
+        <div class="text-center text-muted">
+          Outlook Integration POC - December 2024 - OSU
+        </div>
+      </div>
     </footer>
   </div>
 </template>
+<script setup></script>
