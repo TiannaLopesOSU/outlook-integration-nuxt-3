@@ -1,7 +1,9 @@
 <template>
-  <div class="container">
+  <div>
     <header>
-      <nav class="navbar navbar-light bg-light">
+      <nav
+        class="navbar navbar-light bg-light d-flex justify-content-center py-3"
+      >
         <span class="navbar-brand mb-0 h1">Outlook Integration POC</span>
       </nav>
     </header>
@@ -9,7 +11,7 @@
       <NuxtPage />
     </main>
     <footer>
-      <div class="footer bg-secondary border border-top">
+      <div class="footer bg-light py-2 border border-top">
         <div class="text-center text-muted">
           Outlook Integration POC - December 2024 - OSU
         </div>

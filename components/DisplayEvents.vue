@@ -1,8 +1,8 @@
 <template>
-  <div class="container my-3">
+  <div class="container my-5">
     <div>
       <div class="d-flex justify-content-center">
-        <h1>Outlook Calendar Events</h1>
+        <!-- <h1>Outlook Calendar Events</h1> -->
       </div>
       <div class="d-flex justify-content-center" v-if="!isLoggedIn">
         <button @click="redirectToMicrosoftLogin" class="btn btn-light border">
@@ -34,7 +34,7 @@
       </div>
 
       <!-- List of Events -->
-      <div v-if="events.length">
+      <div v-if="events.length" class="events-max-height overflow-auto">
         <h2>Your Events:</h2>
         <ul>
           <li v-for="event in events" :key="event.id">
@@ -145,3 +145,12 @@ export default {
   },
 };
 </script>
+<style scoped>
+.events-max-height {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 10px;
+  box-sizing: border-box;
+}
+</style>

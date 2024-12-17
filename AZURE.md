@@ -8,7 +8,12 @@
 - Access Tokens and ID tokens issued by authorization endpoint 
 - Supported Account Types --> Accounts in any organizational directory **This should be different for OSU**ß
 
+
 ## API Permissions 
+- Microsoft Graph
+    - Calendars.Read
+    - Calendars.Read.Shared
+    - User.Read
 
 ## Token: 
 - Client ID
