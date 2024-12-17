@@ -10,18 +10,6 @@
         </button>
       </div>
 
-      <!-- Button to Open Add Event Form -->
-      <div class="d-flex justify-content-end mb-3" v-if="isLoggedIn">
-        <button @click="toggleAddEventForm" class="btn btn-primary">
-          Add New Appointment
-        </button>
-      </div>
-
-      <!-- Add Event Form Component -->
-      <div v-if="showAddEventForm">
-        <AddAppointmentForm @eventAdded="fetchEvents" />
-      </div>
-
       <!-- Calendar Display -->
       <div>
         <div class="d-flex justify-content-center">
@@ -29,6 +17,19 @@
             <VCalendar :attributes="calendarAttrs" />
             <!-- <VDatePicker v-model="date" :attributes="calendarAttrs" /> -->
           </client-only>
+        </div>
+      </div>
+
+      <!-- Button to Open Add Event Form -->
+      <div class="d-flex justify-content-center my-3" v-if="isLoggedIn">
+        <div v-if="!showAddEventForm">
+          <button @click="toggleAddEventForm" class="btn btn-primary">
+            Add New Appointment
+          </button>
+        </div>
+        <!-- Add Event Form Component -->
+        <div v-if="showAddEventForm">
+          <AddAppointmentForm @eventAdded="fetchEvents" />
         </div>
       </div>
 

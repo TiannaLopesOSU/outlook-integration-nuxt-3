@@ -24,7 +24,9 @@
           required
         />
       </div>
-      <button type="submit" class="btn btn-success">Add Appointment</button>
+      <div class="text-center">
+        <button type="submit" class="btn btn-success">Add Appointment</button>
+      </div>
     </form>
   </div>
 </template>
@@ -65,7 +67,7 @@ export default {
           }
         );
         alert("Event added successfully!");
-        this.$emit("eventAdded"); // Notify parent to fetch events
+        this.$emit("eventAdded");
       } catch (error) {
         console.error("Error adding event:", error.response || error.message);
         alert("Failed to add event.");
