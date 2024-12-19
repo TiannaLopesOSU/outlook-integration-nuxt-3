@@ -72,10 +72,18 @@
           <h2>Your Events:</h2>
           <ul>
             <li v-for="event in events" :key="event.id">
-              <strong>{{ event.subject }}</strong
-              ><br />
-              Start: {{ formatDate(event.start.dateTime) }}<br />
+              <strong>{{ event.subject }}</strong>
+              <br />
+              Start: {{ formatDate(event.start.dateTime) }}
+              <br />
               End: {{ formatDate(event.end.dateTime) }}
+              <br />
+              <button
+                @click="deleteEvent(event.id)"
+                class="btn btn-danger btn-sm mt-2"
+              >
+                Delete
+              </button>
             </li>
           </ul>
         </div>
@@ -89,7 +97,8 @@
             {{ formatDate(selectedEvent.start.dateTime) }}
           </p>
           <p>
-            <strong>End:</strong> {{ formatDate(selectedEvent.end.dateTime) }}
+            <strong>End:</strong>
+            {{ formatDate(selectedEvent.end.dateTime) }}
           </p>
           <p>
             <strong>Location:</strong>
@@ -106,7 +115,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import { fetchOutlookEvents, deleteOutlookEvent } from "../utils/outlook";
 import AddAppointmentForm from "./AddAppointmentForm.vue";
 
 export default {
@@ -115,10 +124,8 @@ export default {
 
   data() {
     return {
-      date: new Date(),
       calendarAttrs: [],
       isLoggedIn: false,
-      accessToken: null,
       events: [],
       showAddEventForm: false,
       selectedEvent: null,
@@ -128,8 +135,9 @@ export default {
         { label: "Week", value: "week" },
         { label: "Month", value: "month" },
       ],
-      isLoading: true, // State for initial loading
-      isCalendarReady: false, // State for calendar readiness
+      isLoading: true,
+      isCalendarReady: false,
+      accessToken: null,
     };
   },
 
@@ -137,50 +145,48 @@ export default {
     async checkIfLoggedIn() {
       this.accessToken = localStorage.getItem("outlookAccessToken");
       if (!this.accessToken) {
-        console.error("No access token found, clearing local storage.");
         this.isLoggedIn = false;
         localStorage.removeItem("outlookAccessToken");
-        this.isLoading = false; // Stop loading
+        this.isLoading = false;
       } else {
-        console.log("Access token found successfully");
         this.isLoggedIn = true;
         try {
           await this.fetchEvents();
         } catch (error) {
-          console.error(
-            "Error fetching events, clearing token:",
-            error.message
-          );
           this.isLoggedIn = false;
           localStorage.removeItem("outlookAccessToken");
         } finally {
-          this.isLoading = false; // Stop loading
+          this.isLoading = false;
         }
       }
     },
 
     async fetchEvents() {
       try {
-        const response = await axios.get(
-          "https://graph.microsoft.com/v1.0/me/events",
-          {
-            headers: { Authorization: `Bearer ${this.accessToken}` },
-          }
-        );
-        console.log("Raw Events Data:", response.data.value);
-        this.events = response.data.value || [];
+        this.events = await fetchOutlookEvents(this.accessToken);
+        this.sortEvents();
         this.setCalendarAttributes();
       } catch (error) {
-        throw new Error(
-          error.response?.data?.error?.message || "Failed to fetch events"
-        );
+        console.error("Failed to fetch events:", error);
       } finally {
-        this.isCalendarReady = true; // Mark calendar as ready
+        this.isCalendarReady = true;
+      }
+    },
+
+    async deleteEvent(eventId) {
+      if (!confirm("Are you sure you want to delete this event?")) return;
+
+      try {
+        await deleteOutlookEvent(this.accessToken, eventId);
+        this.events = this.events.filter((event) => event.id !== eventId);
+        this.sortEvents();
+        this.setCalendarAttributes();
+      } catch (error) {
+        console.error("Error deleting event:", error);
       }
     },
 
     setCalendarAttributes() {
-      // Convert events to calendar attributes (highlighting start dates)
       this.calendarAttrs = this.events.map((event) => ({
         key: event.id,
         dates: new Date(event.start.dateTime),
@@ -195,6 +201,7 @@ export default {
         },
       }));
     },
+
     formatDate(dateString) {
       const options = {
         year: "numeric",
@@ -206,17 +213,14 @@ export default {
       return new Date(dateString).toLocaleDateString(undefined, options);
     },
 
-    changeCalendarView(view) {
-      this.currentView = view;
+    sortEvents() {
+      this.events.sort(
+        (a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime)
+      );
     },
 
-    showEventDetails({ date }) {
-      const event = this.events.find((e) => {
-        return (
-          new Date(e.start.dateTime).toDateString() === date.toDateString()
-        );
-      });
-      this.selectedEvent = event || null;
+    changeCalendarView(view) {
+      this.currentView = view;
     },
 
     toggleAddEventForm() {

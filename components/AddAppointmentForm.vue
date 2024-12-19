@@ -50,6 +50,7 @@
 
 <script>
 import { ref } from "vue";
+import { createOutlookEvent } from "@/utils/outlook";
 
 export default {
   name: "AddAppointmentForm",
@@ -66,41 +67,26 @@ export default {
         return;
       }
 
+      const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const newEvent = {
         subject: subject.value,
         start: {
           dateTime: startDateTime.value.toISOString(),
-          timeZone: "UTC",
+          timeZone: localTimeZone,
         },
         end: {
           dateTime: endDateTime.value.toISOString(),
-          timeZone: "UTC",
+          timeZone: localTimeZone,
         },
       };
 
       try {
-        const response = await fetch(
-          "https://graph.microsoft.com/v1.0/me/events",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken.value}`,
-            },
-            body: JSON.stringify(newEvent),
-          }
-        );
-
-        if (response.ok) {
-          alert("Event added successfully!");
-          subject.value = "";
-          startDateTime.value = null;
-          endDateTime.value = null;
-        } else {
-          throw new Error("Failed to add event");
-        }
+        await createOutlookEvent(accessToken.value, newEvent);
+        alert("Event added successfully!");
+        subject.value = "";
+        startDateTime.value = null;
+        endDateTime.value = null;
       } catch (error) {
-        console.error("Error adding event:", error);
         alert("Failed to add event.");
       }
     };
