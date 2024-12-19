@@ -12,7 +12,8 @@ export default defineNuxtConfig({
           crossorigin: 'anonymous'
         }
       ]
-    }
+    },
+    baseURL: '/outlook-integration-nuxt-3/',
   },
   vite: {
     vue: {
