@@ -239,7 +239,8 @@ export default {
     redirectToMicrosoftLogin() {
       const clientId = "94ff5836-5336-48e6-909d-5b362d502baa";
       const tenant = "common";
-      const redirectUri = `${window.location.origin}/callback`;
+      // const redirectUri = `${window.location.origin}/callback`;
+      const redirectUri = `https://tiannalopesosu.github.io/outlook-integration-nuxt-3/callback`;
       const scope = "Calendars.ReadWrite";
       const state = "random_state";
       const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
