@@ -1,49 +1,105 @@
 <template>
   <div class="container my-5">
-    <div>
-      <div class="d-flex justify-content-center">
-        <!-- <h1>Outlook Calendar Events</h1> -->
-      </div>
-      <div class="d-flex justify-content-center" v-if="!isLoggedIn">
-        <button @click="redirectToMicrosoftLogin" class="btn btn-light border">
-          Login with Microsoft
-        </button>
-      </div>
+    <!-- Loading Indicator -->
+    <div v-if="isLoading" class="d-flex justify-content-center">
+      <p>Loading, please wait...</p>
+    </div>
 
-      <!-- Calendar Display -->
+    <!-- Main Content -->
+    <div v-else>
       <div>
-        <div class="d-flex justify-content-center">
-          <client-only>
-            <VCalendar :attributes="calendarAttrs" />
-            <!-- <VDatePicker v-model="date" :attributes="calendarAttrs" /> -->
-          </client-only>
-        </div>
-      </div>
-
-      <!-- Button to Open Add Event Form -->
-      <div class="d-flex justify-content-center my-3" v-if="isLoggedIn">
-        <div v-if="!showAddEventForm">
-          <button @click="toggleAddEventForm" class="btn btn-primary">
-            Add New Appointment
+        <!-- Login Button -->
+        <div v-if="!isLoggedIn" class="d-flex justify-content-center">
+          <button
+            @click="redirectToMicrosoftLogin"
+            class="btn btn-light border"
+          >
+            Login with Microsoft
           </button>
         </div>
-        <!-- Add Event Form Component -->
-        <div v-if="showAddEventForm">
-          <AddAppointmentForm @eventAdded="fetchEvents" />
-        </div>
-      </div>
 
-      <!-- List of Events -->
-      <div v-if="events.length" class="events-max-height overflow-auto">
-        <h2>Your Events:</h2>
-        <ul>
-          <li v-for="event in events" :key="event.id">
-            <strong>{{ event.subject }}</strong
-            ><br />
-            Start: {{ formatDate(event.start.dateTime) }}<br />
-            End: {{ formatDate(event.end.dateTime) }}
-          </li>
-        </ul>
+        <!-- Calendar Display -->
+        <div v-if="isLoggedIn">
+          <!-- View Toggle Buttons -->
+          <div class="d-flex justify-content-center mb-3">
+            <button
+              v-for="view in calendarViews"
+              :key="view.value"
+              :class="[
+                'btn',
+                'me-2',
+                {
+                  'btn-primary': currentView === view.value,
+                  'btn-outline-primary': currentView !== view.value,
+                },
+              ]"
+              @click="changeCalendarView(view.value)"
+            >
+              {{ view.label }}
+            </button>
+          </div>
+
+          <!-- Calendar Component -->
+          <div class="d-flex justify-content-center">
+            <div v-if="!isCalendarReady" class="text-center my-3">
+              <p>Loading calendar...</p>
+            </div>
+            <div v-else>
+              <client-only>
+                <VCalendar
+                  :attributes="calendarAttrs"
+                  @click-date="showEventDetails"
+                />
+              </client-only>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Event Form -->
+        <div class="d-flex justify-content-center my-3" v-if="isLoggedIn">
+          <div v-if="!showAddEventForm">
+            <button @click="toggleAddEventForm" class="btn btn-primary">
+              Add New Appointment
+            </button>
+          </div>
+          <div v-if="showAddEventForm">
+            <AddAppointmentForm @eventAdded="fetchEvents" />
+          </div>
+        </div>
+
+        <!-- List of Events -->
+        <div v-if="events.length" class="events-max-height overflow-auto">
+          <h2>Your Events:</h2>
+          <ul>
+            <li v-for="event in events" :key="event.id">
+              <strong>{{ event.subject }}</strong
+              ><br />
+              Start: {{ formatDate(event.start.dateTime) }}<br />
+              End: {{ formatDate(event.end.dateTime) }}
+            </li>
+          </ul>
+        </div>
+
+        <!-- Event Details -->
+        <div v-if="selectedEvent" class="mt-4">
+          <h3>Event Details</h3>
+          <p><strong>Subject:</strong> {{ selectedEvent.subject }}</p>
+          <p>
+            <strong>Start:</strong>
+            {{ formatDate(selectedEvent.start.dateTime) }}
+          </p>
+          <p>
+            <strong>End:</strong> {{ formatDate(selectedEvent.end.dateTime) }}
+          </p>
+          <p>
+            <strong>Location:</strong>
+            {{ selectedEvent.location?.displayName || "N/A" }}
+          </p>
+          <p>
+            <strong>Description:</strong>
+            {{ selectedEvent.body?.content || "N/A" }}
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -65,32 +121,42 @@ export default {
       accessToken: null,
       events: [],
       showAddEventForm: false,
+      selectedEvent: null,
+      currentView: "month",
+      calendarViews: [
+        { label: "Day", value: "day" },
+        { label: "Week", value: "week" },
+        { label: "Month", value: "month" },
+      ],
+      isLoading: true, // State for initial loading
+      isCalendarReady: false, // State for calendar readiness
     };
   },
+
   methods: {
-    checkIfLoggedIn() {
+    async checkIfLoggedIn() {
       this.accessToken = localStorage.getItem("outlookAccessToken");
       if (!this.accessToken) {
-        console.error("No access token found");
+        console.error("No access token found, clearing local storage.");
         this.isLoggedIn = false;
         localStorage.removeItem("outlookAccessToken");
+        this.isLoading = false; // Stop loading
       } else {
         console.log("Access token found successfully");
         this.isLoggedIn = true;
-        this.fetchEvents();
+        try {
+          await this.fetchEvents();
+        } catch (error) {
+          console.error(
+            "Error fetching events, clearing token:",
+            error.message
+          );
+          this.isLoggedIn = false;
+          localStorage.removeItem("outlookAccessToken");
+        } finally {
+          this.isLoading = false; // Stop loading
+        }
       }
-    },
-    toggleAddEventForm() {
-      this.showAddEventForm = !this.showAddEventForm;
-    },
-    redirectToMicrosoftLogin() {
-      const clientId = "94ff5836-5336-48e6-909d-5b362d502baa";
-      const tenant = "common";
-      const redirectUri = `${window.location.origin}/callback`;
-      const scope = "Calendars.ReadWrite";
-      const state = "random_state";
-      const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
-      window.location.href = authUrl;
     },
 
     async fetchEvents() {
@@ -101,14 +167,15 @@ export default {
             headers: { Authorization: `Bearer ${this.accessToken}` },
           }
         );
-        this.events = response.data.value;
-        console.log("Events fetched successfully:", this.events);
+        console.log("Raw Events Data:", response.data.value);
+        this.events = response.data.value || [];
         this.setCalendarAttributes();
       } catch (error) {
-        console.error(
-          "Error fetching events:",
-          error.response || error.message
+        throw new Error(
+          error.response?.data?.error?.message || "Failed to fetch events"
         );
+      } finally {
+        this.isCalendarReady = true; // Mark calendar as ready
       }
     },
 
@@ -128,7 +195,6 @@ export default {
         },
       }));
     },
-
     formatDate(dateString) {
       const options = {
         year: "numeric",
@@ -139,12 +205,41 @@ export default {
       };
       return new Date(dateString).toLocaleDateString(undefined, options);
     },
+
+    changeCalendarView(view) {
+      this.currentView = view;
+    },
+
+    showEventDetails({ date }) {
+      const event = this.events.find((e) => {
+        return (
+          new Date(e.start.dateTime).toDateString() === date.toDateString()
+        );
+      });
+      this.selectedEvent = event || null;
+    },
+
+    toggleAddEventForm() {
+      this.showAddEventForm = !this.showAddEventForm;
+    },
+
+    redirectToMicrosoftLogin() {
+      const clientId = "94ff5836-5336-48e6-909d-5b362d502baa";
+      const tenant = "common";
+      const redirectUri = `${window.location.origin}/callback`;
+      const scope = "Calendars.ReadWrite";
+      const state = "random_state";
+      const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
+      window.location.href = authUrl;
+    },
   },
-  mounted() {
-    this.checkIfLoggedIn();
+
+  async mounted() {
+    await this.checkIfLoggedIn();
   },
 };
 </script>
+
 <style scoped>
 .events-max-height {
   max-height: 150px;
