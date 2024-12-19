@@ -20,7 +20,6 @@
 
         <!-- Calendar Display -->
         <div v-if="isLoggedIn">
-          <!-- View Toggle Buttons -->
           <div class="d-flex justify-content-center mb-3">
             <button
               v-for="view in calendarViews"
@@ -38,17 +37,17 @@
               {{ view.label }}
             </button>
           </div>
-
-          <!-- Calendar Component -->
           <div class="d-flex justify-content-center">
             <div v-if="!isCalendarReady" class="text-center my-3">
               <p>Loading calendar...</p>
             </div>
             <div v-else>
+              <!--   isDark="true" -->
               <client-only>
                 <VCalendar
                   :attributes="calendarAttrs"
                   @click-date="showEventDetails"
+                  expanded
                 />
               </client-only>
             </div>
@@ -84,30 +83,24 @@
               >
                 Delete
               </button>
+              <button
+                @click="editEvent(event)"
+                class="btn btn-primary btn-sm mt-2 ms-2"
+              >
+                Edit
+              </button>
             </li>
           </ul>
         </div>
 
-        <!-- Event Details -->
-        <div v-if="selectedEvent" class="mt-4">
-          <h3>Event Details</h3>
-          <p><strong>Subject:</strong> {{ selectedEvent.subject }}</p>
-          <p>
-            <strong>Start:</strong>
-            {{ formatDate(selectedEvent.start.dateTime) }}
-          </p>
-          <p>
-            <strong>End:</strong>
-            {{ formatDate(selectedEvent.end.dateTime) }}
-          </p>
-          <p>
-            <strong>Location:</strong>
-            {{ selectedEvent.location?.displayName || "N/A" }}
-          </p>
-          <p>
-            <strong>Description:</strong>
-            {{ selectedEvent.body?.content || "N/A" }}
-          </p>
+        <!-- Edit Event Form -->
+        <div v-if="showEditEventForm" class="mt-4">
+          <EditAppointmentForm
+            :key="selectedEvent?.id || 'new-edit'"
+            :event="selectedEvent"
+            @eventUpdated="eventUpdates"
+            @cancelEdit="cancelEditEvent"
+          />
         </div>
       </div>
     </div>
@@ -115,12 +108,17 @@
 </template>
 
 <script>
-import { fetchOutlookEvents, deleteOutlookEvent } from "../utils/outlook";
+import {
+  fetchOutlookEvents,
+  deleteOutlookEvent,
+  updateOutlookEvent,
+} from "../utils/outlook";
 import AddAppointmentForm from "./AddAppointmentForm.vue";
+import EditAppointmentForm from "./EditAppointmentForm.vue";
 
 export default {
   name: "DisplayEvents",
-  components: { AddAppointmentForm },
+  components: { AddAppointmentForm, EditAppointmentForm },
 
   data() {
     return {
@@ -128,12 +126,13 @@ export default {
       isLoggedIn: false,
       events: [],
       showAddEventForm: false,
+      showEditEventForm: false,
       selectedEvent: null,
       currentView: "month",
       calendarViews: [
-        { label: "Day", value: "day" },
-        { label: "Week", value: "week" },
-        { label: "Month", value: "month" },
+        // { label: "Day", value: "day" },
+        // { label: "Week", value: "week" },
+        { label: "Month View", value: "month" },
       ],
       isLoading: true,
       isCalendarReady: false,
@@ -160,7 +159,6 @@ export default {
         }
       }
     },
-
     async fetchEvents() {
       try {
         this.events = await fetchOutlookEvents(this.accessToken);
@@ -172,7 +170,6 @@ export default {
         this.isCalendarReady = true;
       }
     },
-
     async deleteEvent(eventId) {
       if (!confirm("Are you sure you want to delete this event?")) return;
 
@@ -185,7 +182,19 @@ export default {
         console.error("Error deleting event:", error);
       }
     },
+    eventUpdates() {
+      console.log("Event Updated");
+    },
 
+    editEvent(event) {
+      console.log("Editing event:", event);
+      this.selectedEvent = { ...event }; // Ensure deep copy to avoid mutation
+      this.showEditEventForm = true;
+    },
+    cancelEditEvent() {
+      this.showEditEventForm = false;
+      this.selectedEvent = null;
+    },
     setCalendarAttributes() {
       this.calendarAttrs = this.events.map((event) => ({
         key: event.id,
@@ -243,13 +252,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-.events-max-height {
-  max-height: 150px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  padding: 10px;
-  box-sizing: border-box;
-}
-</style>

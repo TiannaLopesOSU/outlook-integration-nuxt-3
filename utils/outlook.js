@@ -1,14 +1,13 @@
 import axios from "axios";
 
-const BASE_URL = "https://graph.microsoft.com/v1.0/me/events";
-
 export async function fetchOutlookEvents(accessToken) {
   try {
-    const response = await axios.get(BASE_URL, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const response = await axios.get(
+      "https://graph.microsoft.com/v1.0/me/events",
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
     return response.data.value;
   } catch (error) {
     console.error("Error fetching events:", error);
@@ -33,14 +32,39 @@ export async function createOutlookEvent(accessToken, event) {
 
 export async function deleteOutlookEvent(accessToken, eventId) {
   try {
-    await axios.delete(`${BASE_URL}/${eventId}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    return true;
+    await axios.delete(
+      `https://graph.microsoft.com/v1.0/me/events/${eventId}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
   } catch (error) {
     console.error("Error deleting event:", error);
+    throw error;
+  }
+}
+
+export async function updateOutlookEvent(accessToken, event) {
+  try {
+    await axios.patch(
+      `https://graph.microsoft.com/v1.0/me/events/${event.id}`,
+      {
+        subject: event.subject,
+        start: {
+          dateTime: new Date(event.start.dateTime).toISOString(),
+          timeZone: "UTC",
+        },
+        end: {
+          dateTime: new Date(event.end.dateTime).toISOString(),
+          timeZone: "UTC",
+        },
+      },
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+  } catch (error) {
+    console.error("Error updating event:", error);
     throw error;
   }
 }
