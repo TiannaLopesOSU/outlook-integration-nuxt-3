@@ -17,12 +17,16 @@ export async function fetchOutlookEvents(accessToken) {
 
 export async function createOutlookEvent(accessToken, event) {
   try {
-    const response = await axios.post(BASE_URL, event, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const response = await axios.post(
+      "https://graph.microsoft.com/v1.0/me/events",
+      event,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error creating event:", error);
