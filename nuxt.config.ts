@@ -13,7 +13,7 @@ export default defineNuxtConfig({
         }
       ]
     },
-    baseURL: '/outlook-inte÷gration-nuxt-3/',
+    baseURL: '/outlook-integration-nuxt-3/',
   },
   vite: {
     vue: {
