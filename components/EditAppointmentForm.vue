@@ -4,8 +4,9 @@
     <form @submit.prevent="submitEvent">
       <!-- Subject Input -->
       <div class="form-group mb-2">
-        <label>Subject:</label>
+        <label for="subject">Subject:</label>
         <input
+          id="subject"
           type="text"
           v-model="updatedEvent.subject"
           class="form-control"
@@ -15,9 +16,10 @@
 
       <!-- Start Date & Time Picker -->
       <div class="form-group mb-2">
-        <label>Start Date & Time:</label>
+        <label for="start-date-time">Start Date & Time:</label>
         <client-only>
           <VDatePicker
+            id="start-date-time"
             v-model="updatedEvent.start.dateTime"
             mode="datetime"
             is-expanded
@@ -28,9 +30,10 @@
 
       <!-- End Date & Time Picker -->
       <div class="form-group mb-2">
-        <label>End Date & Time:</label>
+        <label for="end-date-time">End Date & Time:</label>
         <client-only>
           <VDatePicker
+            id="end-date-time"
             v-model="updatedEvent.end.dateTime"
             mode="datetime"
             is-expanded
@@ -44,7 +47,7 @@
         <button type="submit" class="btn btn-success">Save Changes</button>
         <button
           type="button"
-          @click="$emit('cancelEdit')"
+          @click="cancelEdit"
           class="btn btn-secondary ms-2"
         >
           Cancel
@@ -55,36 +58,41 @@
 </template>
 
 <script>
-import { ref } from "vue";
-import { updateOutlookEvent } from "../utils/outlook";
+import { updateOutlookEvent } from "@/utils/outlook";
 
 export default {
   name: "EditAppointmentForm",
+
   props: {
     event: {
       type: Object,
       required: true,
     },
   },
-  setup(props, { emit }) {
-    const updatedEvent = ref({ ...props.event });
 
-    const submitEvent = async () => {
+  data() {
+    return {
+      updatedEvent: { ...this.event },
+    };
+  },
+
+  methods: {
+    async submitEvent() {
       try {
-        await updateOutlookEvent(
-          localStorage.getItem("outlookAccessToken"),
-          updatedEvent.value
-        );
+        const accessToken = localStorage.getItem("outlookAccessToken");
+        await updateOutlookEvent(accessToken, this.updatedEvent);
         alert("Event updated successfully!");
-        emit("eventUpdated");
-        emit("cancelEdit");
+        this.$emit("eventUpdated");
+        this.cancelEdit();
       } catch (error) {
         console.error("Error updating event:", error);
         alert("Failed to update event.");
       }
-    };
+    },
 
-    return { updatedEvent, submitEvent };
+    cancelEdit() {
+      this.$emit("cancelEdit");
+    },
   },
 };
 </script>

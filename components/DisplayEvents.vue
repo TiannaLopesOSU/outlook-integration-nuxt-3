@@ -7,101 +7,94 @@
 
     <!-- Main Content -->
     <div v-else>
-      <div>
-        <!-- Login Button -->
-        <div v-if="!isLoggedIn" class="d-flex justify-content-center">
+      <!-- Login Button -->
+      <div v-if="!isLoggedIn" class="d-flex justify-content-center">
+        <button @click="redirectToMicrosoftLogin" class="btn btn-light border">
+          Login with Microsoft
+        </button>
+      </div>
+
+      <!-- Calendar Display -->
+      <div v-if="isLoggedIn">
+        <div class="d-flex justify-content-center mb-3">
           <button
-            @click="redirectToMicrosoftLogin"
-            class="btn btn-light border"
+            v-for="view in calendarViews"
+            :key="view.value"
+            :class="[
+              'btn',
+              'me-2',
+              currentView === view.value
+                ? 'btn-primary'
+                : 'btn-outline-primary',
+            ]"
+            @click="changeCalendarView(view.value)"
           >
-            Login with Microsoft
+            {{ view.label }}
           </button>
         </div>
+        <div class="d-flex justify-content-center">
+          <div v-if="!isCalendarReady" class="text-center my-3">
+            <p>Loading calendar...</p>
+          </div>
+          <div v-else>
+            <client-only>
+              <VCalendar
+                :attributes="calendarAttrs"
+                @click-date="showEventDetails"
+                expanded
+              />
+            </client-only>
+          </div>
+        </div>
+      </div>
 
-        <!-- Calendar Display -->
-        <div v-if="isLoggedIn">
-          <div class="d-flex justify-content-center mb-3">
+      <!-- Add Event Form -->
+      <div class="d-flex justify-content-center my-3" v-if="isLoggedIn">
+        <div v-if="!showAddEventForm">
+          <button @click="toggleAddEventForm" class="btn btn-primary">
+            Add New Appointment
+          </button>
+        </div>
+        <div v-if="showAddEventForm">
+          <AddAppointmentForm @eventAdded="fetchEvents" />
+        </div>
+      </div>
+
+      <!-- List of Events -->
+      <div v-if="events.length" class="events-max-height overflow-auto">
+        <h2>Your Events:</h2>
+        <ul>
+          <li v-for="event in events" :key="event.id">
+            <strong>{{ event.subject }}</strong>
+            <br />
+            Start: {{ formatDate(event.start.dateTime) }}
+            <br />
+            End: {{ formatDate(event.end.dateTime) }}
+            <br />
             <button
-              v-for="view in calendarViews"
-              :key="view.value"
-              :class="[
-                'btn',
-                'me-2',
-                {
-                  'btn-primary': currentView === view.value,
-                  'btn-outline-primary': currentView !== view.value,
-                },
-              ]"
-              @click="changeCalendarView(view.value)"
+              @click="deleteEvent(event.id)"
+              class="btn btn-danger btn-sm mt-2"
             >
-              {{ view.label }}
+              Delete
             </button>
-          </div>
-          <div class="d-flex justify-content-center">
-            <div v-if="!isCalendarReady" class="text-center my-3">
-              <p>Loading calendar...</p>
-            </div>
-            <div v-else>
-              <!--   isDark="true" -->
-              <client-only>
-                <VCalendar
-                  :attributes="calendarAttrs"
-                  @click-date="showEventDetails"
-                  expanded
-                />
-              </client-only>
-            </div>
-          </div>
-        </div>
-
-        <!-- Add Event Form -->
-        <div class="d-flex justify-content-center my-3" v-if="isLoggedIn">
-          <div v-if="!showAddEventForm">
-            <button @click="toggleAddEventForm" class="btn btn-primary">
-              Add New Appointment
+            <button
+              @click="editEvent(event)"
+              class="btn btn-primary btn-sm mt-2 ms-2"
+            >
+              Edit
             </button>
-          </div>
-          <div v-if="showAddEventForm">
-            <AddAppointmentForm @eventAdded="fetchEvents" />
-          </div>
-        </div>
+          </li>
+        </ul>
+      </div>
 
-        <!-- List of Events -->
-        <div v-if="events.length" class="events-max-height overflow-auto">
-          <h2>Your Events:</h2>
-          <ul>
-            <li v-for="event in events" :key="event.id">
-              <strong>{{ event.subject }}</strong>
-              <br />
-              Start: {{ formatDate(event.start.dateTime) }}
-              <br />
-              End: {{ formatDate(event.end.dateTime) }}
-              <br />
-              <button
-                @click="deleteEvent(event.id)"
-                class="btn btn-danger btn-sm mt-2"
-              >
-                Delete
-              </button>
-              <button
-                @click="editEvent(event)"
-                class="btn btn-primary btn-sm mt-2 ms-2"
-              >
-                Edit
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Edit Event Form -->
-        <div v-if="showEditEventForm" class="mt-4">
-          <EditAppointmentForm
-            :key="selectedEvent?.id || 'new-edit'"
-            :event="selectedEvent"
-            @eventUpdated="eventUpdates"
-            @cancelEdit="cancelEditEvent"
-          />
-        </div>
+      <!-- Edit Event Form -->
+      <div v-if="showEditEventForm" class="mt-4">
+        <EditAppointmentForm
+          :key="selectedEvent?.id || 'new-edit'"
+          :event="selectedEvent"
+          @eventUpdated="fetchEvents"
+          @cancelEdit="cancelEditEvent"
+        />
       </div>
     </div>
   </div>
@@ -112,13 +105,17 @@ import {
   fetchOutlookEvents,
   deleteOutlookEvent,
   updateOutlookEvent,
-} from "../utils/outlook";
+} from "@/utils/outlook";
 import AddAppointmentForm from "./AddAppointmentForm.vue";
 import EditAppointmentForm from "./EditAppointmentForm.vue";
 
 export default {
   name: "DisplayEvents",
-  components: { AddAppointmentForm, EditAppointmentForm },
+
+  components: {
+    AddAppointmentForm,
+    EditAppointmentForm,
+  },
 
   data() {
     return {
@@ -129,11 +126,7 @@ export default {
       showEditEventForm: false,
       selectedEvent: null,
       currentView: "month",
-      calendarViews: [
-        // { label: "Day", value: "day" },
-        // { label: "Week", value: "week" },
-        { label: "Month View", value: "month" },
-      ],
+      calendarViews: [{ label: "Month View", value: "month" }],
       isLoading: true,
       isCalendarReady: false,
       accessToken: null,
@@ -159,6 +152,7 @@ export default {
         }
       }
     },
+
     async fetchEvents() {
       try {
         this.events = await fetchOutlookEvents(this.accessToken);
@@ -170,6 +164,7 @@ export default {
         this.isCalendarReady = true;
       }
     },
+
     async deleteEvent(eventId) {
       if (!confirm("Are you sure you want to delete this event?")) return;
 
@@ -182,27 +177,22 @@ export default {
         console.error("Error deleting event:", error);
       }
     },
-    eventUpdates() {
-      console.log("Event Updated");
-    },
 
     editEvent(event) {
-      console.log("Editing event:", event);
-      this.selectedEvent = { ...event }; // Ensure deep copy to avoid mutation
+      this.selectedEvent = { ...event };
       this.showEditEventForm = true;
     },
+
     cancelEditEvent() {
       this.showEditEventForm = false;
       this.selectedEvent = null;
     },
+
     setCalendarAttributes() {
       this.calendarAttrs = this.events.map((event) => ({
         key: event.id,
         dates: new Date(event.start.dateTime),
-        highlight: {
-          color: "green",
-          fillMode: "solid",
-        },
+        highlight: { color: "green", fillMode: "solid" },
         popover: {
           label: `Event: ${event.subject}\nStart: ${this.formatDate(
             event.start.dateTime
@@ -239,8 +229,9 @@ export default {
     redirectToMicrosoftLogin() {
       const clientId = "94ff5836-5336-48e6-909d-5b362d502baa";
       const tenant = "common";
-      // const redirectUri = `${window.location.origin}/callback`;
-      const redirectUri = `https://tiannalopesosu.github.io/outlook-integration-nuxt-3/callback`;
+      // const redirectUri = "http://localhost:3000/callback";
+      const redirectUri =
+        "https://tiannalopesosu.github.io/outlook-integration-nuxt-3/callback";
       const scope = "Calendars.ReadWrite";
       const state = "random_state";
       const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
@@ -253,3 +244,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.events-max-height {
+  max-height: 400px;
+}
+</style>

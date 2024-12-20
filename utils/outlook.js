@@ -1,5 +1,6 @@
 import axios from "axios";
 
+// GET
 export async function fetchOutlookEvents(accessToken) {
   try {
     const response = await axios.get(
@@ -15,6 +16,7 @@ export async function fetchOutlookEvents(accessToken) {
   }
 }
 
+// POST
 export async function createOutlookEvent(accessToken, event) {
   try {
     const response = await axios.post(
@@ -34,6 +36,7 @@ export async function createOutlookEvent(accessToken, event) {
   }
 }
 
+// DELETE
 export async function deleteOutlookEvent(accessToken, eventId) {
   try {
     await axios.delete(
@@ -48,6 +51,7 @@ export async function deleteOutlookEvent(accessToken, eventId) {
   }
 }
 
+// PATCH
 export async function updateOutlookEvent(accessToken, event) {
   try {
     await axios.patch(
