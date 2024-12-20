@@ -18,6 +18,7 @@ Nuxt 3 Integration with Outlook -- Microsoft Graph
 - Nuxt 3 
 - V-Calendar -- library 
 - Bootstrap
+-  axios
 
 
 ## Resources

@@ -1,6 +1,7 @@
 # How is the Azure App configured for this proof of concept? 
 
 ## App Registration 
+- Supported Account Types --> All microsoft users
 
 ## Redirect URIs
 
